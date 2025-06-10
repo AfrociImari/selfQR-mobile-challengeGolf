@@ -24,7 +24,7 @@ export default defineConfig({
         port: 5173, // Ensure this port is open
         cors: true, // Enables CORS
         hmr: {
-            host: '192.168.0.105',
+            host: '192.168.0.106',
         },
         watch: {
             usePolling: true,

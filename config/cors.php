@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'showReceiptMobile'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie','generate-encrypted-mobile-url','update-qrcode-mobile-admission'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'], // Change '*' to specific domains if needed
     'allowed_origins_patterns' => [],

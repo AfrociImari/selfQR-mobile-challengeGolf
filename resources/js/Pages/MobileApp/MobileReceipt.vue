@@ -1,165 +1,90 @@
 <!-- eslint-disable prettier/prettier -->
 <template>
     <MobileAppLayout :checkInParam="checkIn">
-        <div class="tabs-container">
-            <v-tabs v-model="activeTab" align-tabs="center" grow>
-              <v-tab
-                v-for="(drinkData, index) in drinkDataArray"
-                :key="index"
-                :value="index"
-              >
-                {{ drinkData.parent_category }}
-              </v-tab>
-            </v-tabs>
-          </div>      
 
-          <div class="content-container">
-            <v-window v-model="activeTab">
-              <v-window-item
-                v-for="(drinkData, index) in drinkDataArray"
-                :key="index"
-                :value="index"
-              >
-                <v-list class="scrollable-list">
-                  <v-list-item
-                    v-for="(item, i) in drinkData.data"
-                    :key="i"
-                    @click="handleClick(item)"
-                    class="rounded-lg border"
-                  >
-                    <template v-slot:prepend>
-                      <v-avatar size="100">
-                        <v-img :src="item.image" alt="Item Image"></v-img>
-                      </v-avatar>
-                    </template>
-      
-                    <v-list-item-content>
-                      <v-list-item-title>{{ item.product_name }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ item.unitprice.toLocaleString() }}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-window-item>
-            </v-window>
-          </div>
+        <v-container class="scale-down">
+            <v-row class="flex-wrap">
+                <v-col cols="8" class="date-text text-body-3 text-sm-caption">日付:2025-05-13(火)</v-col>
+                <v-col cols="4" class="date-text text-body-6 text-sm-caption">打席:30</v-col>   
+            </v-row>
+            <v-row class="flex-wrap mt-1">
+                <v-col cols="6" class="title-text text-body-2 text-sm-caption"><p>入場時刻 : {{initialTime}}</p></v-col>
+                <v-col cols="6" class="title-text text-body-2 text-sm-caption"><p>現在時刻 : {{currentTime}}</p></v-col>   
+            </v-row>
+            <v-row class="flex-wrap mt-1">
+                <v-col cols="12" class="title-text text-sm-caption">
+                    <p style="font-family: monospace; min-width: 100px; display: inline-block;">経過時刻 :</p>
+                    <p style="font-family: monospace; min-width: 100px; display: inline-block;" 
+                    :class="{ 'bg-red lighten-5 red--text text--darken-3': isCountdownActive }">{{currentUsedHHMMSS}}</p></v-col>  
+            </v-row>
+              <!-- <p class="title-text">入場時刻 : {{currentUsedHHMMSS}}</p> -->
+            <v-row class="flex-wrap mt-1">
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">10分</v-col>
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">20分</v-col>
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">30分</v-col>
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">40分</v-col>
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">50分</v-col>
+                <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">1時間</v-col>
+            </v-row>
+            <v-row class="flex-wrap">
+                <v-col cols="2" :class="['bordered-col', getColColor(0,10), 'text-body-2', 'text-sm-caption']">￥{{ used10min }}</v-col>
+                <v-col cols="2" :class="['bordered-col', getColColor(10,20), 'text-body-2', 'text-sm-caption']">￥{{ used20min }}</v-col>
+                <v-col cols="2" :class="['bordered-col', getColColor(20,30), 'text-body-2', 'text-sm-caption']">￥{{ used30min }}</v-col>
+                <v-col cols="2" :class="['bordered-col', getColColor(30,40), 'text-body-2', 'text-sm-caption']">￥{{ used40min }}</v-col>
+                <v-col cols="2" :class="['bordered-col', getColColor(40,50), 'text-body-2', 'text-sm-caption']">￥{{ used50min }}</v-col>
+                <v-col cols="2" :class="['bordered-col', getColColor(50,60), 'text-body-2', 'text-sm-caption']">￥{{ used1hr }}</v-col>
+            </v-row>
 
-        <v-dialog v-model="showDetailFlg" scrollable persistent>
-            <v-card
-                class="rounded-t-m mx-auto my-auto"
-                elevation="2"
-                max-width="100%"
-                style="
-                    border: 2px solid #5d4037;
-                    border-radius: 12px;
-                    border-top-left-radius: 12px;
-                    border-top-right-radius: 12px;
-                "
-            >
-                <v-img
-                    height="250"
-                    width="100%"
-                    :src="drinkDetailData.image"
-                    align="center"
-                    class="rounded-t-m"
-                    cover
-                ></v-img>
+            <v-row class="mt-5 flex-wrap">
+                <v-col cols="6" class="bordered-col">1時間30分</v-col>
+                <v-col cols="6" class="bordered-col">2時間</v-col>
+            </v-row>
+            <v-row class="flex-wrap">
+                <v-col cols="6" :class="['bordered-col', getColColor(60,90)]">￥{{used1hr30min}}</v-col>
+                <v-col cols="6" :class="['bordered-col', getColColor(90,120)]">￥{{used2hr}}</v-col>
+            </v-row>
 
-                <div class="d-flex justify-space-between align-center px-16">
-                    <v-card-title class="pa-0">{{
-                        drinkDetailData.product_name
-                    }}</v-card-title>
-                    <span class="text-h5">{{ selectedChipValue }}円</span>
-                </div>
+            <v-row class="mt-5 flex-wrap">
+                <v-col cols="6" class="bordered-col">2時間30分</v-col>
+                <v-col cols="6" class="bordered-col">3時間</v-col>
+            </v-row>
+            <v-row>
+                <v-col cols="6" :class="['bordered-col', getColColor(120,150)]">￥{{used2hr30min}}</v-col>
+                <v-col cols="6" :class="['bordered-col', getColColor(150,180)]">￥{{used3hr}}</v-col>
+            </v-row>
 
-                <v-card-text align="center">
-                    <div class="d-flex align-center mt-3 justify-center">
-                        <v-icon
-                            class="me-2"
-                            style="font-size: 40px; margin-left: 15px"
-                            @click="plusQuantity"
-                        >
-                            mdi-plus-circle
-                        </v-icon>
-                        <v-icon
-                            class="me-2"
-                            style="font-size: 40px; margin-left: 15px"
-                            @click="minusQuantity"
-                        >
-                            mdi-minus-circle
-                        </v-icon>
+            <v-row class="mt-5 flex-wrap">
+                <v-col cols="6" class="bordered-col">3時間30分</v-col>
+                <v-col cols="6" class="bordered-col">4時間</v-col>
+            </v-row>
+            <v-row class="mb-2 flex-wrap">
+                <v-col cols="6" :class="['bordered-col', getColColor(180,210)]">￥{{used3hr30min}}</v-col>
+                <v-col cols="6" :class="['bordered-col', getColColor(210,240)]">￥{{used4hr}}</v-col>
+            </v-row>
 
-                        <v-chip
-                            class="text-h5 ms-6"
-                            variant="outlined"
-                            rounded="xl"
-                            style="
-                                width: 40px;
-                                height: 40px;
-                                justify-content: center;
-                                align-items: center;
-                            "
-                        >
-                            {{ drinkQuantity }}
-                        </v-chip>
-                    </div>
-                </v-card-text>
+            <v-row class="mb-2 flex-wrap">
+                <p>以降&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30分毎に+100円</p>
+            </v-row>
 
-                <v-divider class="mx-4"></v-divider>
+            <p class="title-text">現在の料金 : <font style="color: darkorange;">￥{{currentAmount}}</font></p>
 
-                <v-card-title>サイズを選んでください</v-card-title>
-                
-                <v-card-text>
-                    <v-chip-group
-                        v-model="selectedChipValue"
-                        class="d-flex flex-wrap justify-center"
-                        mandatory
-                        @update:modelValue="handleChipChange">
-                        <v-chip
-                            v-for="(chip, index) in dataChipsList"
-                            :key="index"
-                            :value="chip.value"
-                            :class="{'selected-chip': selectedChipIndex === index}"
-                            style="
-                                font-size: 20px;
-                                font-weight: bold;
-                                height: 50px;
-                                width: 100px;
-                                padding: 10px 20px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                text-align: center;
-                            "
-                            outlined
-                        >
-                            {{ chip.label }}
-                        </v-chip>
-                    </v-chip-group>
-                </v-card-text>
+            <v-row class="justify-center py-1 flex-wrap">
+                <v-btn color="blue lighten-2" variant="outlined" text
+                    style="height: 50px;width: 150px; font-size: 20px; padding: 0 12px;" @click="showQRCode">
+                    退席
+                </v-btn>
+            </v-row>
 
-                <v-card-actions class="justify-center py-4">
-                    <v-btn
-                        color="green lighten-2"
-                        variant="outlined"
-                        class="mx-2"
-                        text
-                        @click="sendToCart"
-                    >
-                        カートに入れる
-                    </v-btn>
-                    <v-btn
-                        color="orange lighten-2"
-                        variant="outlined"
-                        class="mx-2"
-                        text
-                        @click="getInitialData"
-                    >
-                        キャンセル
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        </v-container>
     </MobileAppLayout>
+     <!-- Modal for QR Code -->
+    <v-dialog v-model="showQrCodeModal" scrollable max-width="200px" persistent>
+            <QrcodeVue :value="qrValue" :size="200" level="H" />
+        <v-btn color="red lighten-2" minWidth="200px" @click="showQrCodeModal = false">
+                    キャンセル
+                </v-btn>
+    <!-- </div> -->
+    </v-dialog>
 </template>
 
 <script>
@@ -167,10 +92,12 @@ import MobileAppLayout from '@/Pages/MobileApp/MobileAppLayout.vue';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import eventBus from '@/Event/eventBus';
+import QrcodeVue from 'qrcode.vue';
 
 export default {
     components: {
         MobileAppLayout,
+        QrcodeVue,
     },
     setup() {
         const page = usePage();
@@ -183,212 +110,230 @@ export default {
     },
 
     data: () => ({
-        activeTab: 0,
-        drinkDataArray: [],
-        drinkDetailData: {},
-        showDetailFlg: false,
-        showAlert: false,
-        drinkQuantity: 1,
-        showHistoryModal: false,
-        orderedDrinkData: {},
-        orderedDrinkDataArray: [],
-        dataChipsList: [],
-        selectedChipLabel: null, // Store the selected chip label
-        selectedChipValue: null, // Store the selected chip value
-        selectedChipIndex: null, // Store the selected chip index
+        initialUsedPrice: 0,
+        initialTime: '13:05:00',
+        delayTime: '5',
+        currentTime: '',
+        currentUsedHHMMSS:'',
+        currentUsedMinutes: 0,
+        currentAmount:0,
+        used10min: 0,
+        used20min: 0,
+        used30min: 0,
+        used40min: 0,
+        used50min: 0,
+        used1hr: 0,
+        usedihr30min: 0,
+        used2hr: 0,
+        used2hr30min: 0,
+        used3hr: 0,
+        used3hr30min: 0,
+        used4hr: 0,
+        qrValue: '',
+        showQrCodeModal: false,
+        isCountdownActive: false,
+        countdownRemaining: 300, // 5 minutes in seconds
+        countdownDone: false,
     }),
-
-    created() {
-        this.getInitialData();
-    },
-
-    computed: {
-        drinkTotalAmount() {
-            return this.drinkQuantity * this.selectedChipValue; // Auto-calculated total
-        },
-    },
 
     mounted() {
         this.polling = setInterval(() => {
-            this.getCheckinStatus();
+            //this.getCheckinStatus();
         }, 3000);
+
+        const storedInitial = localStorage.getItem('initialTime');
+        const storedCountdown = localStorage.getItem('countdownRemaining');
+        const storedCountdownDone = localStorage.getItem('countdownDone');
+
+        if (storedInitial) {
+            this.initialTime = storedInitial;
+        } else {
+            // const now = new Date();
+            // const hh = String(now.getHours()).padStart(2, '0');
+            // const mm = String(now.getMinutes()).padStart(2, '0');
+            // this.initialTime = `${hh}:${mm}`;
+            localStorage.setItem('initialTime', this.initialTime);
+        }
+
+        if (storedCountdown) {
+            this.countdownRemaining = parseInt(storedCountdown);
+            this.isCountdownActive = this.countdownRemaining > 0;
+        }
+
+        if (storedCountdownDone === 'true') {
+            this.countdownDone = true;
+        }
+
+
+        this.updateTime();
+        this.timer = setInterval(this.updateTime, 1000);
     },
 
     beforeUnmount() {
         clearInterval(this.polling);
+        clearInterval(this.timer);
     },
 
     methods: {
-        getInitialData() {
-            const grouped = {};
-            const uniqueItems = new Set(); // Store unique product names
-            this.showDetailFlg = false;
-            this.drinkQuantity = 1;
+        // async getCheckinStatus() {
+        //     try {
+        //         const res = await axios.get(`/checkin/${this.checkIn.checkin_id}`);
+        //         if (res.data.order_stop == 'true') {
+        //             location.reload();
+        //         }
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // },
+        updateTime() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            this.currentTime = `${hh}:${mm}:${ss}`;
 
-            axios
-                .get('/drinkMenu')
-                .then((res) => {
-                    res.data.forEach((item) => {
-                        if (!uniqueItems.has(item.product_name)) {
-                            uniqueItems.add(item.product_name); // Add unique product name
-
-                            if (!grouped[item.category.parent_category]) {
-                                grouped[item.category.parent_category] = [];
-                            }
-                            grouped[item.category.parent_category].push(item);
-                        }
-                    });
-
-                    this.drinkDataArray = Object.keys(grouped).map(
-                        (parent_category) => ({
-                            parent_category,
-                            data: grouped[parent_category],
-                        }),
-                    );
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
+            this.calculateUsedMinutes();
+            this.calculateUsedAmount();
         },
-        async handleClick(item) {
-            this.showDetailFlg = true;
 
-            // Fetch the detailed drink data based on the menu_id
-            try {
-                const res = await axios.get(`/drinkMenu/${item.menu_id}`);
-                this.drinkDetailData = res.data;
-            } catch (error) {
-                console.error(error);
+        calculateUsedMinutes() {
+            const [initHour, initMinute] = this.initialTime.split(':').map(Number);
+            const [currHour, currMinute, currSecond] = this.currentTime.split(':').map(Number);
+
+            const initialDate = new Date();
+            initialDate.setHours(initHour, initMinute, 0);
+
+            const currentDate = new Date();
+            currentDate.setHours(currHour, currMinute, currSecond);
+
+            // Calculate raw difference in milliseconds
+            let diffMs = currentDate - initialDate;
+            if (diffMs < 0) {
+                diffMs = 0; // Handle overnight or invalid cases
             }
 
-            // Clear the previous size options (chip list)
-            this.dataChipsList = [];
+            // If countdown should be active
+            if (!this.countdownDone && this.currentUsedMinutes <= 5 && !this.isCountdownActive) {
+                this.isCountdownActive = true;
+                this.countdownRemaining = 300; // 5 minutes in seconds
+                localStorage.setItem('countdownRemaining', this.countdownRemaining.toString());
+            }
 
-            // Fetch the variants (Small, Medium, Large) and their unit prices based on product_name
-            try {
-                const res = await axios.get(
-                    `/drinkMenu/variants/${item.product_name}`,
-                );
-                // Assuming the response contains an array of variants with unitprice
-                res.data.forEach((cat) => {
-                    this.dataChipsList.push({
-                        label: cat.variant, // The name of the variant (e.g., Small, Medium, Large)
-                        value: cat.unitprice, // The price associated with the variant
-                    });
-                });
+            // Countdown active mode
+            if (this.isCountdownActive) {
+                if (this.countdownRemaining > 0) {
+                    this.countdownRemaining--;
+                    localStorage.setItem('countdownRemaining', this.countdownRemaining.toString());
 
-                // Default selectedChip to the first item's unit price (optional)
-                if (this.dataChipsList.length > 0) {
-                    this.selectedChipIndex = 0;
-                    this.selectedChipLabel = this.dataChipsList[0].label;
-                    this.selectedChipValue = this.dataChipsList[0].value;
+                    const hh = String(Math.floor(this.countdownRemaining / 3600)).padStart(2, '0');
+                    const mm = String(Math.floor((this.countdownRemaining % 3600) / 60)).padStart(2, '0');
+                    const ss = String(this.countdownRemaining % 60).padStart(2, '0');
+                    this.currentUsedHHMMSS = `${hh}:${mm}:${ss}`;
+                } else {
+                    this.isCountdownActive = false;
+                    this.countdownDone = true;
+                    localStorage.setItem('countdownDone', 'true');
                 }
-            } catch (error) {
-                console.error(error);
+
+                // Keep minutes display paused at 0~5 min
+                this.currentUsedMinutes = Math.floor(diffMs / 60000);
+                return;
+            }
+
+            // Normal counting mode (after countdown is done)
+            let adjustedDiffMs = diffMs;
+            if (this.countdownDone) {
+                adjustedDiffMs -= 5 * 60 * 1000; // subtract 5 minutes in milliseconds
+                if (adjustedDiffMs < 0) adjustedDiffMs = 0;
+            }
+
+            this.currentUsedMinutes = Math.floor(adjustedDiffMs / 60000);
+
+            const diffSeconds = Math.floor(adjustedDiffMs / 1000);
+            const hh = String(Math.floor(diffSeconds / 3600)).padStart(2, '0');
+            const mm = String(Math.floor((diffSeconds % 3600) / 60)).padStart(2, '0');
+            const ss = String(diffSeconds % 60).padStart(2, '0');
+            this.currentUsedHHMMSS = `${hh}:${mm}:${ss}`;
+        },
+
+        //金額を計算する
+        calculateUsedAmount() {
+            // if(this.checkIn.type == 'g'){
+            //     this.initialUsedPrice = 900;
+            // } else {
+            //     this.initialUsedPrice = 400;
+            // }
+            this.used10min = this.initialUsedPrice;
+            this.used20min = this.initialUsedPrice + 100;
+            this.used30min = this.initialUsedPrice + 200;
+            this.used40min = this.initialUsedPrice + 300;
+            this.used50min = this.initialUsedPrice + 400;
+            this.used1hr = this.initialUsedPrice + 500;
+            this.used1hr30min = this.initialUsedPrice + 600;
+            this.used2hr = this.initialUsedPrice + 700;
+            this.used2hr30min = this.initialUsedPrice + 800;
+            this.used3hr = this.initialUsedPrice + 900;
+            this.used3hr30min = this.initialUsedPrice + 1000;
+            this.used4hr = this.initialUsedPrice + 1100;
+
+            const minutes = this.currentUsedMinutes;
+
+            let extra = 0;
+
+            if (minutes <= 60) {
+                // Add ¥100 every 10 minutes for the first hour
+                const tenMinBlocks = Math.ceil(minutes / 10);
+                extra = (tenMinBlocks - 1) * 100; // First 10 minutes included in base
+            } else {
+                // First hour fixed
+                extra = 500;
+
+                // Additional ¥100 every 30 minutes after the first hour
+                const extraMinutes = minutes - 60;
+                const thirtyMinBlocks = Math.ceil(extraMinutes / 30);
+                extra += thirtyMinBlocks * 100;
+            }
+
+            this.currentAmount = this.initialUsedPrice + extra;
+
+        },
+        getColColor(prev,current) {
+            if (this.currentUsedMinutes >prev && this.currentUsedMinutes <= current) {
+                return 'bg-orange'; // active time
+            }
+            if (this.currentUsedMinutes >prev && this.currentUsedMinutes > current) {
+                return 'bg-grey-lighten-1'; // inactive time
             }
         },
 
-        handleChipChange(value) {
-            const selectedChipIndex = this.dataChipsList.findIndex(
-                (chip) => chip.value === value,
-            );
-
-            if (selectedChipIndex !== -1) {
-                this.selectedChipIndex = selectedChipIndex;
-                this.selectedChipLabel =
-                    this.dataChipsList[selectedChipIndex].label;
-                this.selectedChipValue = value;
-            }
-        },
-
-        plusQuantity() {
-            this.drinkQuantity++;
-        },
-
-        minusQuantity() {
-            if (this.drinkQuantity > 1) {
-                this.drinkQuantity--; // Decrease, but not below 1
-            }
-        },
-
-        selectChip(index, label, value) {
-            this.selectedChipIndex = index; // Track the specific index
-            this.selectedChipLabel = label;
-            this.selectedChipValue = value;
-        },
-
-        async sendToCart() {
-            console.log('Label:' + this.selectedChipLabel);
-            console.log('Value:' + this.selectedChipValue);
-            await axios
-                .post('/orderCart', {
-                    checkin_id: this.checkIn.checkin_id,
-                    product_name: this.drinkDetailData.product_name,
-                    variant: this.selectedChipLabel,
-                    unitprice: this.selectedChipValue,
-                    quantity: this.drinkQuantity,
-                    total_amount: this.selectedChipValue * this.drinkQuantity,
-                })
-                .then(() => {
-                    eventBus.emit('cart-updated'); // Allow listener to be registered
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
-
-            this.showDetailFlg = false;
-        },
-
-        async getCheckinStatus() {
-            try {
-                const res = await axios.get(`/checkin/${this.checkIn}`);
-                if (res.data.order_stop == 'true') {
-                    this.getInitialData();
-                }
-            } catch (error) {
-                console.error(error);
-            }
+        showQRCode() {
+            this.qrValue = '2025-05-16 09:07';
+            this.showQrCodeModal = true;
         },
     },
 };
 </script>
 
 <style>
-.tabs-container {
-    position: sticky;
-    top: 64px; /* v-app-bar height */
-    z-index: 9;
-    background-color: white;
-}
-
-.content-container {
-    height: calc(100vh - 64px - 48px); /* app-bar (64px) + tabs (48px) */
-    overflow-y: auto;
-}
-
-.scrollable-list {
-    max-height: 100%;
-}
-
-.pdf-content {
-    padding: 20px;
-    border: 1px solid #ddd;
-    background: white;
-}
-.custom-chip {
-    font-size: 24px;
-    font-weight: bold;
-    height: 50px;
-    width: 100px;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.title-text {
     text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: rgb(16, 111, 24);
+    margin-bottom: 16px;
 }
-.selected-chip {
-    background-color: #712809 !important; /* deep-purple */
-    color: white !important;
-}
-</style>
 
+.date-text {
+    text-align: left;
+    font-size: 18px;
+    color: rgb(10, 121, 38);
+    font-weight: bold;
+}
+
+.bordered-col {
+    border: 1px solid #ccc;
+    text-align: center;
+    padding: 2px;
+}
+
+</style>

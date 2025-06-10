@@ -1,23 +1,23 @@
 version: '3'
 services:
-  l11dev-nginx:
-    container_name: "l11dev-nginx"
+  cg-mobile-nginx:
+    container_name: "cg-mobile-nginx"
     build:
       context: ./docker/nginx
     depends_on:
-      - l11dev-app
+      - cg-mobile-app
     ports:
       - 80:80
     volumes:
       - ./:/src
 
-  l11dev-app:
-    container_name: "l11dev-app"
+  cg-mobile-app:
+    container_name: "cg-mobile-app"
     build:
       context: .
       dockerfile: ./docker/php/Dockerfile
     depends_on:
-      - l11dev-mysql
+      - cg-mobile-mysql
     ports:
       - 5173:5173
     volumes:
@@ -26,20 +26,20 @@ services:
       - /src/vendor
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
 
-  l11dev-mysql:
+  cg-mobile-mysql:
     image: mysql:8.0.37
     command: --max_allowed_packet=32505856
-    container_name: "l11dev-mysql"
+    container_name: "cg-mobile-mysql"
     volumes:
       - ./docker/mysql:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=l11dev
+      - MYSQL_DATABASE=cg-mobile
     ports:
       - 3306:3306
 
-  l11dev-redis:
+  cg-mobile-redis:
     image: redis:alpine
-    container_name: "l11dev-redis"
+    container_name: "cg-mobile-redis"
     ports:
       - 16379:6379

@@ -1,122 +1,57 @@
 <!-- eslint-disable prettier/prettier -->
 <template>
-    <v-app>
-      <!-- Fixed Toolbar -->
-      <v-app-bar color="brown" dark flat app>
-        <v-toolbar-title>飲み物</v-toolbar-title>
-        <v-toolbar-title>{{ checkInParam.room.room_name }}</v-toolbar-title>
-  
-        <v-spacer></v-spacer>
-  
-        <v-btn icon>
-          <v-icon>mdi-magnify</v-icon>
-        </v-btn>
-  
-        <v-btn icon @click="orderCartClick">
-          <v-badge v-if="orderCartCount > 0" :content="Number(orderCartCount)" color="red" overlap>
-            <v-icon>mdi-cart</v-icon>
-          </v-badge>
-          <v-icon v-else>mdi-cart</v-icon>
-        </v-btn>
-  
-        <v-btn icon @click="showHistoryModal = true">
-          <v-icon>mdi-history</v-icon>
-        </v-btn>
-  
-        <v-menu offset-y>
-          <template #activator="{ props }">
-            <v-btn icon v-bind="props">
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
-          </template>
-  
-          <v-list>
-            <v-list-item
-              v-for="item in settingItems"
-              :key="item.title"
-              @click="handleSettingAction(item.action)"
-            >
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-app-bar>
-  
-      <!-- Page Content -->
-      <v-main>
-        <v-container fluid class="pt-4">
-          <v-alert v-if="emptyOrderAlert" type="warning" class="mt-4">
-            注文カートは空です！
-          </v-alert>
-  
-          <!-- Modals -->
-          <OrderHistoryModal
-            :showHistoryModal="showHistoryModal"
-            :checkIn="checkInParam"
-            @close="showHistoryModal = false"
-          />
-  
-          <OrderCartModal
-            :showCartModal="showCartModal"
-            :checkIn="checkInParam"
-            @close="showCartModal = false"
-            @refresh="getOrderCart"
-          />
-  
-          <CourseMenuModal
-            :showCourseMenuModal="showCourseMenuModal"
-            :checkIn="checkInParam"
-            @close="showCourseMenuModal = false"
-          />
-  
-          <slot />
+  <v-app>
+    <!-- Fixed Toolbar -->
+    <v-app-bar color="green" dark flat app>
+      <v-toolbar-title style="font-weight: bold;">チャレンジゴルフ</v-toolbar-title>
 
-        </v-container>
-      </v-main>
+      <v-btn icon @click="showHistoryModal = true">
+        <v-icon>mdi-history</v-icon>
+      </v-btn>
 
-     <!-- Floating Action Button -->
-        <v-btn
-        color="brown"
-        dark
-        fab
-        fixed
-        elevation="8"
-        class="ma-4"
-        style="
-          position: fixed;
-          bottom: 12px;
-          right: 24px;
-         z-index: 1500; /* LOWER than dialog */
-          width: 64px;
-          height: 64px;
-          border-radius: 50%;
-          min-width: 0;
-        "
-        @click="onFabClick"
-        >
-        <v-icon size="32">mdi-cart-arrow-right</v-icon>
-        </v-btn>
+      <v-menu offset-y>
+        <template #activator="{ props }">
+          <v-btn icon v-bind="props">
+            <v-icon>mdi-dots-vertical</v-icon>
+          </v-btn>
+        </template>
 
-        <!-- Fixed Footer (must come after FAB) -->
-        <v-footer app padless>
-        <v-col class="text-center" cols="12">
+        <v-list>
+          <v-list-item v-for="item in settingItems" :key="item.title" @click="handleSettingAction(item.action)">
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-app-bar>
+
+    <!-- Page Content -->
+    <v-main>
+      <v-container fluid class="pt-4">
+        <v-alert v-if="emptyOrderAlert" type="warning" class="mt-4">
+          注文カートは空です！
+        </v-alert>
+
+        <!-- Modals -->
+
+        <slot />
+
+      </v-container>
+    </v-main>
+
+    <!-- Fixed Footer (must come after FAB) -->
+    <v-footer app padless>
+      <v-col class="text-center" cols="12">
         {{ new Date().getFullYear() }} — <strong>Afroci Co.Ltd</strong>
-        </v-col>
-        </v-footer>
-    </v-app>
-</template> 
+      </v-col>
+    </v-footer>
+  </v-app>
+</template>
 
 <script>
-import OrderHistoryModal from '@/Pages/MobileApp/OrderHistoryModal.vue';
-import OrderCartModal from '@/Pages/MobileApp/OrderCartModal.vue';
-import CourseMenuModal from '@/Pages/MobileApp/CourseMenuModal.vue';
 import eventBus from '@/Event/eventBus';
 
 export default {
     components: {
-        OrderHistoryModal,
-        OrderCartModal,
-        CourseMenuModal,
     },
     props: {
         checkInParam: {
@@ -128,8 +63,6 @@ export default {
     data() {
         return {
             showHistoryModal: false,
-            showCartModal: false,
-            showCourseMenuModal: false,
             orderCartData: [],
             //orderCartCount: 0,
             emptyOrderAlert: false,
@@ -154,39 +87,36 @@ export default {
         },
     },
     mounted() {
-        this.getOrderCart();
-        eventBus.on('cart-updated', this.getOrderCart);
-        this.polling = setInterval(this.getOrderCart, 2000); // Every 3s
+        //this.getOrderCart();
+        //eventBus.on('cart-updated', this.getOrderCart);
+        //this.polling = setInterval(this.getOrderCart, 2000); // Every 3s
     },
 
     beforeUnmount() {
-        eventBus.off('cart-updated', this.getOrderCart);
-        clearInterval(this.polling);
+        //eventBus.off('cart-updated', this.getOrderCart);
+        //clearInterval(this.polling);
     },
     methods: {
-        async getOrderCart() {
-            // Fetch the order cart data
-            try {
-                const res = await axios.get(
-                    `/orderCart/${this.checkInParam.checkin_id}`,
-                );
-                this.orderCartData = res.data;
-                //this.orderCartCount = this.orderCartData.length;
-            } catch (error) {
-                console.error(error);
-            }
+        resetTimer() {
+            localStorage.removeItem('initialTime');
+            localStorage.removeItem('countdownRemaining');
+            localStorage.removeItem('countdownDone');
+            location.reload(); // or reinitialize component data
         },
 
-        orderCartClick() {
-            if (this.orderCartCount > 0) {
-                this.showCartModal = true;
-            } else {
-                this.emptyOrderAlert = true;
-                setTimeout(() => {
-                    this.emptyOrderAlert = false;
-                }, 2000);
-            }
-        },
+        // async getOrderCart() {
+        //     // Fetch the order cart data
+        //     try {
+        //         const res = await axios.get(
+        //             `/orderCart/${this.checkInParam.checkin_id}`,
+        //         );
+        //         this.orderCartData = res.data;
+        //         //this.orderCartCount = this.orderCartData.length;
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // },
+
         handleSettingAction(action) {
             if (typeof this[action] === 'function') {
                 this[action]();
@@ -195,11 +125,10 @@ export default {
             }
         },
 
-        goToCourseMenu() {
-            this.showCourseMenuModal = true;
-        },
-
         reloadPage() {
+            localStorage.removeItem('initialTime');
+            localStorage.removeItem('countdownRemaining');
+            localStorage.removeItem('countdownDone');
             location.reload();
         },
 
@@ -212,11 +141,7 @@ export default {
         openHelp() {
             alert('ヘルプページは準備中です！');
         },
-
-        onFabClick() {
-            // show order cart modal
-            this.showCartModal = true;
-        },
+       
     },
 };
 </script>

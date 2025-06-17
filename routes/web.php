@@ -37,7 +37,7 @@ Route::put('/users/{id}', [UserController::class, 'update']);
 //Route::post('/generate-encrypted-mobile-url', [AdmissionController::class, 'generateEncryptedMobileUrl']);
 
 // Define the route for rendering mobile screen
-Route::get('/admission/mobile/{encrypted_admission_no}', [AdmissionController::class, 'gotoMobileMenu']);
+Route::get('/admission/mobile/{encrypted_admission_day}/{encrypted_admission_time}/{encrypted_boxName}', [AdmissionController::class, 'gotoMobileMenu']);
 
 //Route::put('/admission/updateQrCode/{admission_no}', [AdmissionController::class, 'updateQrCode']);
 

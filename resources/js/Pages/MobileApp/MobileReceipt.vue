@@ -292,24 +292,8 @@ export default {
             return ''; // Future blocks
         },
 
-        showQRCode() {
-            const qrData = {
-                admission_day: this.admissionData.admission_day,
-                admission_time: this.initialTime,
-                current_time: this.currentTime,
-                box_name: this.admissionData.box_name,
-                customer_id: this.admissionData.customer_id,
-                customer_class: this.admissionData.customer_class,
-                holiday_flg: this.admissionData.holiday_flg,
-                junior_flg: this.admissionData.junior_flg,
-                current_amount: this.currentAmount,
-                // Pass the total elapsed seconds for full accuracy in the QR code,
-                // or just the displayed time as you prefer.
-                total_elapsed_seconds: this.totalElapsedSecondsFromAdmission,
-                used_time_display: this.isCountdownActive ? this.countdownTimeFormatted : this.currentUsedHHMMSS,
-            };
-            this.qrValue = JSON.stringify(qrData);
-
+         showQRCode() {
+            this.qrValue = this.admissionData.admission_day+" "+this.admissionData.admission_time+" "+this.currentTime+" "+this.admissionData.box_name+" "+this.admissionData.customer_id+" "+this.admissionData.customer_class+" "+this.admissionData.holiday_flg+" "+this.admissionData.junior_flg;
             this.showQrCodeModal = true;
         },
     },

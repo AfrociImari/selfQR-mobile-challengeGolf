@@ -240,6 +240,10 @@ export default {
             // Determine initial price based on customer class
             this.initialUsedPrice = this.admissionData.customer_class === 'g' ? 900 : 400;
 
+            if (this.admissionData.holiday_flg === 1) {
+                this.initialUsedPrice += 100;
+            }
+
             // Set all fixed price points
             this.used10min = this.initialUsedPrice;
             this.used20min = this.initialUsedPrice + 100;

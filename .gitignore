@@ -8,6 +8,7 @@
 .env
 vite.config.js
 /vendor
+docker/mysql/
 .env.backup
 .env.production
 .phpactor.json

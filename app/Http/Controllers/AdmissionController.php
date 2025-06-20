@@ -45,6 +45,9 @@ class AdmissionController extends Controller
     public function show(string $id)
     {
         //
+        $admission = Admission::findOrFail($id);
+
+    return response()->json($admission);
     }
 
     /**
@@ -72,7 +75,7 @@ class AdmissionController extends Controller
     }
 
      /**
-     * Update the qrCode value to corresponding checkinId
+     * Update the qrCode value to corresponding admissionDataId
      */
     public function updateQrCode(Request $request)
     {
@@ -83,10 +86,15 @@ class AdmissionController extends Controller
 
         if (!$admission) {
             return response()->json(['message' => 'Admission not found'], 404);
-        }
-        
-        $admission->billing_flg = true;
+        }else{
+         $admission->delete_flg = true;
         $admission->save();
+        }
+
+         return Inertia::render('MobileApp/MobileReceipt', [
+            'admissionData' => $admission
+        ]);
+
     }
 
     //generate encrypted url for mobile devices
@@ -99,16 +107,21 @@ class AdmissionController extends Controller
         //divide the qrCode data to substring with delimiter '&'
         $data = explode('&', $request->input('self_qr_data'));
 
-        if (count($data) !== 8) {
+        if (count($data) !== 7) {
             return response()->json(['error' => 'Invalid QR Code format'], 400);
         }
 
-        //2025-06-03&09:27:00&25&A0001&y&nj&0:1
+        //2025-06-03&09:27:00&25&A0001&y&nj&1
         $admission_day = $data[0];
         $admission_time = $data[1];
         $box_name = $data[2];
         $customer_id = $data[3];
         $customer_class = $data[4];
+        $junior_flg = $data[5];
+        $holiday_flg = $data[6];
+        if (strlen($admission_time) === 5) { // Valid time format length like "13:32"
+          $admission_time .= ':00'; // becomes "13:32:00"
+        }
 
         $encryptedAdmissionDay = Crypt::encryptString($admission_day);
         $encryptedAdmissionTime = Crypt::encryptString($admission_time);
@@ -126,6 +139,8 @@ class AdmissionController extends Controller
                 'box_name' => $box_name,
                 'customer_id' => $customer_id,
                 'customer_class' => $customer_class,
+                'junior_flg' =>  $junior_flg,
+                'holiday_flg' =>  $holiday_flg,
             ]);
 
             $admission->save();
@@ -152,13 +167,13 @@ class AdmissionController extends Controller
         ->where('box_name',  $box_name)
         ->firstOrFail();
 
-        //billing_flgがtrueの場合はQRコード無効画面を表示する
-        if ($admission->billing_flg == 1) {
+        //delete_flgがtrueの場合はQRコード無効画面を表示する
+        if ($admission->delete_flg == 1) {
             return redirect()->route('qrCodeError');
         }
 
         return Inertia::render('MobileApp/MobileReceipt', [
-            'checkin' => $admission
+            'admissionData' => $admission
         ]);
 
     }

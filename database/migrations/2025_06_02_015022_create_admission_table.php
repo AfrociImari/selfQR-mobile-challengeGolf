@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('admission', function (Blueprint $table) {
             $table->id();
-            $table->string('admission_no', 50);
             $table->string('admission_day', 50);
             $table->string('admission_time', 50);
             $table->string('customer_class', 45);
             $table->string('customer_id', 45);
             $table->string('box_name', 45);
-            $table->string('qr_code', 2048)->nullable();// Max length for URLs in browsers
-            $table->boolean('billing_flg')->default(false);
+            $table->string('junior_flg',45)->nullable();
+            $table->boolean('holiday_flg')->default(false);
+            //$table->string('qr_code', 2048)->nullable();// Max length for URLs in browsers
+            $table->boolean('delete_flg')->default(false);
             $table->timestamps();
         });
     }

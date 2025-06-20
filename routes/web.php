@@ -36,6 +36,7 @@ Route::put('/users/{id}', [UserController::class, 'update']);
 // Generate encrypted Url
 //Route::post('/generate-encrypted-mobile-url', [AdmissionController::class, 'generateEncryptedMobileUrl']);
 
+Route::resource('/admission', AdmissionController::class);
 // Define the route for rendering mobile screen
 Route::get('/admission/mobile/{encrypted_admission_day}/{encrypted_admission_time}/{encrypted_boxName}', [AdmissionController::class, 'gotoMobileMenu']);
 

@@ -15,13 +15,13 @@ class Admission extends Model
     //  * @var list<string>
     //  */
     protected $fillable = [
-        'admission_no',
         'admission_day',
         'admission_time',
         'customer_class',
         'customer_id',
         'box_name',
-        'qr_code',
-        'billing_flg'
+        'junior_flg',
+        'holiday_flg',
+        'delete_flg'
     ];
 }

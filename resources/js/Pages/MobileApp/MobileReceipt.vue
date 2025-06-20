@@ -1,23 +1,38 @@
-<!-- eslint-disable prettier/prettier -->
 <template>
-    <MobileAppLayout :checkInParam="checkIn">
+    <MobileAppLayout :admissionDataParam="admissionData">
 
         <v-container class="scale-down">
             <v-row class="flex-wrap">
-                <v-col cols="8" class="date-text text-body-3 text-sm-caption">日付:2025-05-13(火)</v-col>
-                <v-col cols="4" class="date-text text-body-6 text-sm-caption">打席:30</v-col>   
+                <v-col cols="8" class="date-text text-body-3 text-sm-caption">日付:{{ getTodayInJapaneseFormat() }}</v-col>
+                <v-col cols="3" class="boxname-text" style=" border: 2px solid red; background-color: #219640;text-align:center;">
+                    {{admissionData.box_name}}</v-col>   
             </v-row>
             <v-row class="flex-wrap mt-1">
                 <v-col cols="6" class="title-text text-body-2 text-sm-caption"><p>入場時刻 : {{initialTime}}</p></v-col>
                 <v-col cols="6" class="title-text text-body-2 text-sm-caption"><p>現在時刻 : {{currentTime}}</p></v-col>   
             </v-row>
+
             <v-row class="flex-wrap mt-1">
                 <v-col cols="12" class="title-text text-sm-caption">
                     <p style="font-family: monospace; min-width: 100px; display: inline-block;">経過時刻 :</p>
-                    <p style="font-family: monospace; min-width: 100px; display: inline-block;" 
-                    :class="{ 'bg-red lighten-5 red--text text--darken-3': isCountdownActive }">{{currentUsedHHMMSS}}</p></v-col>  
+
+                    <p
+                        v-if="isCountdownActive"
+                        style="font-family: monospace; min-width: 100px; display: inline-block;"
+                        class="bg-red lighten-5 red--text text--darken-3"
+                    >
+                        {{ countdownTimeFormatted }}
+                    </p>
+
+                    <p
+                        v-else
+                        style="font-family: monospace; min-width: 100px; display: inline-block;"
+                    >
+                        {{ currentUsedHHMMSS }}
+                    </p>
+                </v-col>
             </v-row>
-              <!-- <p class="title-text">入場時刻 : {{currentUsedHHMMSS}}</p> -->
+
             <v-row class="flex-wrap mt-1">
                 <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">10分</v-col>
                 <v-col cols="2" class="bordered-col text-body-2 text-sm-caption">20分</v-col>
@@ -77,13 +92,11 @@
 
         </v-container>
     </MobileAppLayout>
-     <!-- Modal for QR Code -->
-    <v-dialog v-model="showQrCodeModal" scrollable max-width="200px" persistent>
-            <QrcodeVue :value="qrValue" :size="200" level="H" />
+      <v-dialog v-model="showQrCodeModal" scrollable max-width="200px" persistent>
+                <QrcodeVue :value="qrValue" :size="200" level="H" />
         <v-btn color="red lighten-2" minWidth="200px" @click="showQrCodeModal = false">
                     キャンセル
                 </v-btn>
-    <!-- </div> -->
     </v-dialog>
 </template>
 
@@ -91,7 +104,6 @@
 import MobileAppLayout from '@/Pages/MobileApp/MobileAppLayout.vue';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import eventBus from '@/Event/eventBus';
 import QrcodeVue from 'qrcode.vue';
 
 export default {
@@ -101,168 +113,134 @@ export default {
     },
     setup() {
         const page = usePage();
-        const checkIn = computed(() => page.props.checkin);
+        const admissionData = computed(() => page.props.admissionData);
 
         return {
             page,
-            checkIn,
+            admissionData,
         };
     },
 
     data: () => ({
         initialUsedPrice: 0,
-        initialTime: '13:05:00',
-        delayTime: '5',
+        initialTime: '00:00:00', // Will be set from admissionData
+        boxName: '',            // Will be set from admissionData
         currentTime: '',
-        currentUsedHHMMSS:'',
-        currentUsedMinutes: 0,
-        currentAmount:0,
-        used10min: 0,
-        used20min: 0,
-        used30min: 0,
-        used40min: 0,
-        used50min: 0,
-        used1hr: 0,
-        usedihr30min: 0,
-        used2hr: 0,
-        used2hr30min: 0,
-        used3hr: 0,
-        used3hr30min: 0,
-        used4hr: 0,
+        currentUsedHHMMSS: '', // Elapsed time shown after countdown
+        currentUsedMinutes: 0, // Minutes used for billing (adjusted for grace period)
+        currentAmount: 0,
+        // Price points (will be calculated)
+        used10min: 0, used20min: 0, used30min: 0, used40min: 0, used50min: 0,
+        used1hr: 0, used1hr30min: 0, used2hr: 0, used2hr30min: 0,
+        used3hr: 0, used3hr30min: 0, used4hr: 0,
         qrValue: '',
         showQrCodeModal: false,
+
+        // Countdown related data (no localStorage for these now)
         isCountdownActive: false,
-        countdownRemaining: 300, // 5 minutes in seconds
-        countdownDone: false,
+        countdownTimeFormatted: '00:05:00', // Displays remaining countdown time
+        totalElapsedSecondsFromAdmission: 0, // New property to store total time passed
     }),
 
     mounted() {
+        this.initialTime = this.admissionData.admission_time;
+        this.boxName = this.admissionData.box_name;
+
+        // Start the main time update timer
+        this.updateTime(); // Call once immediately to set initial times
+        this.timer = setInterval(this.updateTime, 1000); // Update every second
+
+        // Start polling for admission status
         this.polling = setInterval(() => {
-            //this.getCheckinStatus();
+            this.getAdmissionStatus();
         }, 3000);
-
-        const storedInitial = localStorage.getItem('initialTime');
-        const storedCountdown = localStorage.getItem('countdownRemaining');
-        const storedCountdownDone = localStorage.getItem('countdownDone');
-
-        if (storedInitial) {
-            this.initialTime = storedInitial;
-        } else {
-            // const now = new Date();
-            // const hh = String(now.getHours()).padStart(2, '0');
-            // const mm = String(now.getMinutes()).padStart(2, '0');
-            // this.initialTime = `${hh}:${mm}`;
-            localStorage.setItem('initialTime', this.initialTime);
-        }
-
-        if (storedCountdown) {
-            this.countdownRemaining = parseInt(storedCountdown);
-            this.isCountdownActive = this.countdownRemaining > 0;
-        }
-
-        if (storedCountdownDone === 'true') {
-            this.countdownDone = true;
-        }
-
-
-        this.updateTime();
-        this.timer = setInterval(this.updateTime, 1000);
     },
 
     beforeUnmount() {
         clearInterval(this.polling);
         clearInterval(this.timer);
+        // No countdownTimer to clear directly as it's part of the main updateTime loop now
     },
 
     methods: {
-        // async getCheckinStatus() {
-        //     try {
-        //         const res = await axios.get(`/checkin/${this.checkIn.checkin_id}`);
-        //         if (res.data.order_stop == 'true') {
-        //             location.reload();
-        //         }
-        //     } catch (error) {
-        //         console.error(error);
-        //     }
-        // },
-        updateTime() {
-            const now = new Date();
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            const ss = String(now.getSeconds()).padStart(2, '0');
-            this.currentTime = `${hh}:${mm}:${ss}`;
-
-            this.calculateUsedMinutes();
-            this.calculateUsedAmount();
+        async getAdmissionStatus() {
+            try {
+                const res = await axios.get(`/admission/${this.admissionData.id}`);
+                if (res.data.delete_flg == '1') {
+                    location.reload();
+                }
+            } catch (error) {
+                console.error("Error fetching admission status:", error);
+            }
         },
 
-        calculateUsedMinutes() {
-            const [initHour, initMinute] = this.initialTime.split(':').map(Number);
+        getTodayInJapaneseFormat() {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekday = daysOfWeek[date.getDay()];
+            return `${year}-${month}-${day}(${weekday})`;
+        },
+
+        updateTime() {
+            const now = new Date();
+            this.currentTime = now.toTimeString().slice(0, 8); // "HH:MM:SS"
+            this.calculateTimesAndAmounts(); // Unified function for all calculations
+        },
+
+        calculateTimesAndAmounts() {
+            const [initHour, initMinute, initSecond = 0] = this.initialTime.split(':').map(Number);
             const [currHour, currMinute, currSecond] = this.currentTime.split(':').map(Number);
 
             const initialDate = new Date();
-            initialDate.setHours(initHour, initMinute, 0);
-
+            initialDate.setHours(initHour, initMinute, initSecond);
             const currentDate = new Date();
             currentDate.setHours(currHour, currMinute, currSecond);
 
-            // Calculate raw difference in milliseconds
             let diffMs = currentDate - initialDate;
-            if (diffMs < 0) {
-                diffMs = 0; // Handle overnight or invalid cases
-            }
+            if (diffMs < 0) diffMs = 0; // Ensures time doesn't go negative
 
-            // If countdown should be active
-            if (!this.countdownDone && this.currentUsedMinutes <= 5 && !this.isCountdownActive) {
+            // Store the total elapsed seconds from admission for internal use
+            this.totalElapsedSecondsFromAdmission = Math.floor(diffMs / 1000);
+            const fiveMinutesInSeconds = 300; // 5 * 60 seconds
+
+            // --- Determine if countdown is active or regular elapsed time ---
+            if (this.totalElapsedSecondsFromAdmission < fiveMinutesInSeconds) {
                 this.isCountdownActive = true;
-                this.countdownRemaining = 300; // 5 minutes in seconds
-                localStorage.setItem('countdownRemaining', this.countdownRemaining.toString());
+                const remainingSeconds = fiveMinutesInSeconds - this.totalElapsedSecondsFromAdmission;
+                const hh = String(Math.floor(remainingSeconds / 3600)).padStart(2, '0');
+                const mm = String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, '0');
+                const ss = String(remainingSeconds % 60).padStart(2, '0');
+                this.countdownTimeFormatted = `${hh}:${mm}:${ss}`;
+
+                // During countdown, billable minutes are 0
+                this.currentUsedMinutes = 0;
+                this.currentUsedHHMMSS = `00:00:00`; // Still set this for when v-else takes over
+            } else {
+                this.isCountdownActive = false; // Countdown is over
+
+                // Calculate elapsed time AFTER the 5-minute grace period
+                let adjustedSeconds = this.totalElapsedSecondsFromAdmission - fiveMinutesInSeconds;
+                if (adjustedSeconds < 0) adjustedSeconds = 0; // Should be handled by initial if, but for safety
+
+                const hh = String(Math.floor(adjustedSeconds / 3600)).padStart(2, '0');
+                const mm = String(Math.floor((adjustedSeconds % 3600) / 60)).padStart(2, '0');
+                const ss = String(adjustedSeconds % 60).padStart(2, '0');
+                this.currentUsedHHMMSS = `${hh}:${mm}:${ss}`;
+                this.currentUsedMinutes = Math.floor(adjustedSeconds / 60);
             }
 
-            // Countdown active mode
-            if (this.isCountdownActive) {
-                if (this.countdownRemaining > 0) {
-                    this.countdownRemaining--;
-                    localStorage.setItem('countdownRemaining', this.countdownRemaining.toString());
-
-                    const hh = String(Math.floor(this.countdownRemaining / 3600)).padStart(2, '0');
-                    const mm = String(Math.floor((this.countdownRemaining % 3600) / 60)).padStart(2, '0');
-                    const ss = String(this.countdownRemaining % 60).padStart(2, '0');
-                    this.currentUsedHHMMSS = `${hh}:${mm}:${ss}`;
-                } else {
-                    this.isCountdownActive = false;
-                    this.countdownDone = true;
-                    localStorage.setItem('countdownDone', 'true');
-                }
-
-                // Keep minutes display paused at 0~5 min
-                this.currentUsedMinutes = Math.floor(diffMs / 60000);
-                return;
-            }
-
-            // Normal counting mode (after countdown is done)
-            let adjustedDiffMs = diffMs;
-            if (this.countdownDone) {
-                adjustedDiffMs -= 5 * 60 * 1000; // subtract 5 minutes in milliseconds
-                if (adjustedDiffMs < 0) adjustedDiffMs = 0;
-            }
-
-            this.currentUsedMinutes = Math.floor(adjustedDiffMs / 60000);
-
-            const diffSeconds = Math.floor(adjustedDiffMs / 1000);
-            const hh = String(Math.floor(diffSeconds / 3600)).padStart(2, '0');
-            const mm = String(Math.floor((diffSeconds % 3600) / 60)).padStart(2, '0');
-            const ss = String(diffSeconds % 60).padStart(2, '0');
-            this.currentUsedHHMMSS = `${hh}:${mm}:${ss}`;
+            // --- Calculate amount (always based on currentUsedMinutes) ---
+            this.calculateUsedAmount();
         },
 
-        //金額を計算する
         calculateUsedAmount() {
-            // if(this.checkIn.type == 'g'){
-            //     this.initialUsedPrice = 900;
-            // } else {
-            //     this.initialUsedPrice = 400;
-            // }
+            // Determine initial price based on customer class
+            this.initialUsedPrice = this.admissionData.customer_class === 'g' ? 900 : 400;
+
+            // Set all fixed price points
             this.used10min = this.initialUsedPrice;
             this.used20min = this.initialUsedPrice + 100;
             this.used30min = this.initialUsedPrice + 200;
@@ -276,38 +254,62 @@ export default {
             this.used3hr30min = this.initialUsedPrice + 1000;
             this.used4hr = this.initialUsedPrice + 1100;
 
-            const minutes = this.currentUsedMinutes;
+            // Calculate current amount based on currentUsedMinutes (which is 0 during grace period)
+            const minutesForBilling = this.currentUsedMinutes;
+            let extraCost = 0;
 
-            let extra = 0;
-
-            if (minutes <= 60) {
-                // Add ¥100 every 10 minutes for the first hour
-                const tenMinBlocks = Math.ceil(minutes / 10);
-                extra = (tenMinBlocks - 1) * 100; // First 10 minutes included in base
+            if (minutesForBilling <= 60) {
+                // Add ¥100 for every 10-minute block after the initial 0-10 min block
+                const tenMinBlocks = Math.ceil(minutesForBilling / 10);
+                extraCost = (tenMinBlocks - 1) * 100;
+                if (extraCost < 0) extraCost = 0; // Ensures no negative cost for 0-10 min
             } else {
-                // First hour fixed
-                extra = 500;
+                // After 60 minutes, the initial 1-hour cost is already accounted for
+                extraCost = 500;
 
-                // Additional ¥100 every 30 minutes after the first hour
-                const extraMinutes = minutes - 60;
-                const thirtyMinBlocks = Math.ceil(extraMinutes / 30);
-                extra += thirtyMinBlocks * 100;
+                // Add ¥100 for every 30-minute block after the first hour
+                const additionalMinutes = minutesForBilling - 60;
+                const thirtyMinBlocks = Math.ceil(additionalMinutes / 30);
+                extraCost += thirtyMinBlocks * 100;
             }
 
-            this.currentAmount = this.initialUsedPrice + extra;
-
+            this.currentAmount = this.initialUsedPrice + extraCost;
         },
-        getColColor(prev,current) {
-            if (this.currentUsedMinutes >prev && this.currentUsedMinutes <= current) {
-                return 'bg-orange'; // active time
+
+        getColColor(minStart, minEnd) {
+            // During countdown, no pricing blocks are highlighted
+            if (this.isCountdownActive) {
+                return '';
             }
-            if (this.currentUsedMinutes >prev && this.currentUsedMinutes > current) {
-                return 'bg-grey-lighten-1'; // inactive time
+            // After countdown, highlight based on adjusted minutes
+            const minutes = this.currentUsedMinutes;
+            if (minutes >= minStart && minutes < minEnd) {
+                return 'bg-orange'; // Current active block
             }
+            if (minutes >= minEnd) {
+                return 'bg-grey-lighten-1'; // Already passed block
+            }
+            return ''; // Future blocks
         },
 
         showQRCode() {
-            this.qrValue = '2025-05-16 09:07';
+            const qrData = {
+                admission_day: this.admissionData.admission_day,
+                admission_time: this.initialTime,
+                current_time: this.currentTime,
+                box_name: this.admissionData.box_name,
+                customer_id: this.admissionData.customer_id,
+                customer_class: this.admissionData.customer_class,
+                holiday_flg: this.admissionData.holiday_flg,
+                junior_flg: this.admissionData.junior_flg,
+                current_amount: this.currentAmount,
+                // Pass the total elapsed seconds for full accuracy in the QR code,
+                // or just the displayed time as you prefer.
+                total_elapsed_seconds: this.totalElapsedSecondsFromAdmission,
+                used_time_display: this.isCountdownActive ? this.countdownTimeFormatted : this.currentUsedHHMMSS,
+            };
+            this.qrValue = JSON.stringify(qrData);
+
             this.showQrCodeModal = true;
         },
     },
@@ -315,6 +317,7 @@ export default {
 </script>
 
 <style>
+/* Your existing styles remain the same */
 .title-text {
     text-align: center;
     font-size: 20px;
@@ -327,6 +330,12 @@ export default {
     text-align: left;
     font-size: 18px;
     color: rgb(10, 121, 38);
+    font-weight: bold;
+}
+.boxname-text {
+    text-align: left;
+    font-size: 28px;
+    color: rgb(230, 237, 232);
     font-weight: bold;
 }
 

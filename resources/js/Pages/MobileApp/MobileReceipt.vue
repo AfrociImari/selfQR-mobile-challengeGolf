@@ -297,7 +297,10 @@ export default {
         },
 
          showQRCode() {
-            this.qrValue = this.admissionData.admission_day+" "+this.admissionData.admission_time+" "+this.currentTime+" "+this.admissionData.box_name+" "+this.admissionData.customer_id+" "+this.admissionData.customer_class+" "+this.admissionData.holiday_flg+" "+this.admissionData.junior_flg;
+/*
+             this.qrValue = this.admissionData.admission_day+" "+this.admissionData.admission_time+" "+this.currentTime+" "+this.admissionData.box_name+" "+this.admissionData.customer_id+" "+this.admissionData.customer_class+" "+this.admissionData.holiday_flg+" "+this.admissionData.junior_flg;
+*/
+             this.qrValue = this.admissionData.admission_day+" "+this.admissionData.admission_time+" "+this.admissionData.box_name+" "+this.admissionData.customer_id+" "+this.admissionData.customer_class+" "+this.admissionData.junior_flg+" "+this.admissionData.holiday_flg;
             this.showQrCodeModal = true;
         },
     },

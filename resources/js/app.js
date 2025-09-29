@@ -10,7 +10,8 @@ import 'vuetify/styles';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { createPinia } from 'pinia';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+//const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'SelfQR';
 const vuetify = createVuetify();
 const pinia = createPinia();
 
